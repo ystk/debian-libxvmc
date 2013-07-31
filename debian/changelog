@@ -1,3 +1,15 @@
+libxvmc (2:1.0.5-1+squeeze2) squeeze-security; urgency=high
+
+  * Fix regression in CVE-2013-1999 fix.  Thanks to Al Viro and Dave Airlie.
+
+ -- Julien Cristau <jcristau@debian.org>  Fri, 24 May 2013 08:08:45 +0200
+
+libxvmc (2:1.0.5-1+squeeze1) oldstable-security; urgency=low
+
+  * CVE-2013-1990 CVE-2013-1994
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Mon, 13 May 2013 21:31:32 +0000
+
 libxvmc (2:1.0.5-1) unstable; urgency=low
 
   [ Timo Aaltonen ]

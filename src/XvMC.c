@@ -20,6 +20,18 @@
 #include <sys/time.h>
 #include <X11/extensions/Xext.h>
 #include <X11/extensions/extutil.h>
+#include <limits.h>
+
+#ifndef HAVE__XEATDATAWORDS
+static inline void _XEatDataWords(Display *dpy, unsigned long n)
+{
+# ifndef LONG64
+    if (n >= (ULONG_MAX >> 2))
+        _XIOError(dpy);
+# endif
+    _XEatData (dpy, n << 2);
+}
+#endif
 
 static XExtensionInfo _xvmc_info_data;
 static XExtensionInfo *xvmc_info = &_xvmc_info_data;
@@ -115,8 +127,8 @@ XvMCSurfaceInfo * XvMCListSurfaceTypes(Display *dpy, XvPortID port, int *num)
     }
 
     if(rep.num > 0) {
-	surface_info = 
-	    (XvMCSurfaceInfo*)Xmalloc(rep.num * sizeof(XvMCSurfaceInfo));
+        if (rep.num < (INT_MAX / sizeof(XvMCSurfaceInfo)))
+            surface_info = Xmalloc(rep.num * sizeof(XvMCSurfaceInfo));
 
         if(surface_info) {
 	    xvmcSurfaceInfo sinfo;
@@ -138,7 +150,7 @@ XvMCSurfaceInfo * XvMCListSurfaceTypes(Display *dpy, XvPortID port, int *num)
 	       surface_info[i].flags = sinfo.flags;
 	    }
 	} else
-	   _XEatData(dpy, rep.length << 2);
+	   _XEatDataWords(dpy, rep.length);
     }
 
     UnlockDisplay (dpy);
@@ -176,8 +188,8 @@ XvImageFormatValues * XvMCListSubpictureTypes (
     }
 
     if(rep.num > 0) {
-        ret = 
-	   (XvImageFormatValues*)Xmalloc(rep.num * sizeof(XvImageFormatValues));
+        if (rep.num < (INT_MAX / sizeof(XvImageFormatValues)))
+            ret = Xmalloc(rep.num * sizeof(XvImageFormatValues));
 
         if(ret) {
             xvImageFormatInfo Info;
@@ -211,7 +223,7 @@ XvImageFormatValues * XvMCListSubpictureTypes (
               ret[i].scanline_order = Info.scanline_order;
             }
         } else
-	   _XEatData(dpy, rep.length << 2);
+	   _XEatDataWords(dpy, rep.length);
     }
 
     UnlockDisplay (dpy);
@@ -277,12 +289,13 @@ Status _xvmc_create_context (
     context->flags = rep.flags_return;
 
     if(rep.length) {
-	*priv_data = Xmalloc(rep.length << 2);
+	if (rep.length < (INT_MAX >> 2))
+	    *priv_data = Xmalloc(rep.length << 2);
 	if(*priv_data) {
             _XRead(dpy, (char*)(*priv_data), rep.length << 2);
 	    *priv_count = rep.length;
 	} else
-	    _XEatData(dpy, rep.length << 2);
+	    _XEatDataWords(dpy, rep.length);
     }
 
     UnlockDisplay (dpy);
@@ -358,12 +371,13 @@ Status _xvmc_create_surface (
     }
 
     if(rep.length) {
-        *priv_data = Xmalloc(rep.length << 2);
+        if (rep.length < (INT_MAX >> 2))
+            *priv_data = Xmalloc(rep.length << 2);
         if(*priv_data) {
             _XRead(dpy, (char*)(*priv_data), rep.length << 2);
             *priv_count = rep.length;
         } else
-            _XEatData(dpy, rep.length << 2);
+            _XEatDataWords(dpy, rep.length);
     }
 
     UnlockDisplay (dpy);
@@ -448,12 +462,13 @@ Status _xvmc_create_subpicture (
     subpicture->component_order[3] = rep.component_order[3];
 
     if(rep.length) {
-        *priv_data = Xmalloc(rep.length << 2);
+        if (rep.length < (INT_MAX >> 2))
+            *priv_data = Xmalloc(rep.length << 2);
         if(*priv_data) {
             _XRead(dpy, (char*)(*priv_data), rep.length << 2);
             *priv_count = rep.length;
         } else
-            _XEatData(dpy, rep.length << 2);
+            _XEatDataWords(dpy, rep.length);
     }
 
     UnlockDisplay (dpy);
@@ -488,7 +503,6 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
     XExtDisplayInfo *info = xvmc_find_display(dpy);
     xvmcGetDRInfoReply rep;
     xvmcGetDRInfoReq  *req;
-    char *tmpBuf = NULL;
     CARD32 magic;
 
 #ifdef HAS_SHM
@@ -498,6 +512,9 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
     here.tz_minuteswest = 0;
     here.tz_dsttime = 0;
 #endif
+
+    *name = NULL;
+    *busID = NULL;
 
     XvMCCheckExtension (dpy, info, BadImplementation);
 
@@ -557,20 +574,15 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
 #endif
 
     if (rep.length > 0) {
+	unsigned long realSize = 0;
+	char *tmpBuf = NULL;
 
-        int realSize = rep.length << 2;
-
-	tmpBuf = (char *) Xmalloc(realSize);
-	if (tmpBuf) {
-	    *name = (char *) Xmalloc(rep.nameLen);
-	    if (*name) {
-		*busID = (char *) Xmalloc(rep.busIDLen);
-		if (! *busID) {
-		    XFree(*name);
-		    XFree(tmpBuf);
-		}
-	    } else {
-		XFree(tmpBuf);
+	if (rep.length < (INT_MAX >> 2)) {
+	    realSize = rep.length << 2;
+	    if (realSize >= (rep.nameLen + rep.busIDLen)) {
+		tmpBuf = Xmalloc(realSize);
+		*name = Xmalloc(rep.nameLen);
+		*busID = Xmalloc(rep.busIDLen);
 	    }	    
 	}
 
@@ -578,12 +590,19 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
 
 	    _XRead(dpy, tmpBuf, realSize);
 	    strncpy(*name,tmpBuf,rep.nameLen);
+	    (*name)[rep.nameLen - 1] = '\0';
 	    strncpy(*busID,tmpBuf+rep.nameLen,rep.busIDLen);
+	    (*busID)[rep.busIDLen - 1] = '\0';
 	    XFree(tmpBuf);
 
 	} else {
+	    XFree(*name);
+	    *name = NULL;
+	    XFree(*busID);
+	    *busID = NULL;
+	    XFree(tmpBuf);
 
-	    _XEatData(dpy, realSize);
+	    _XEatDataWords(dpy, rep.length);
 	    UnlockDisplay (dpy);
 	    SyncHandle ();
 	    return -1;
