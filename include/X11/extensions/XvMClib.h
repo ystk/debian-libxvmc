@@ -1,6 +1,3 @@
-/* $XdotOrg: xc/include/extensions/XvMClib.h,v 1.2 2004/04/23 18:43:06 eich Exp $ */
-/* $XFree86: xc/include/extensions/XvMClib.h,v 1.6 2001/11/14 21:54:37 mvojkovi Exp $ */
-
 #ifndef _XVMCLIB_H_
 #define _XVMCLIB_H_
 
@@ -14,8 +11,8 @@ Bool XvMCQueryExtension (Display *display, int *eventBase, int *errBase);
 Status XvMCQueryVersion (Display *display, int *major_versionp,
 			 int *minor_versionp);
 Status XvMCGetDRInfo(Display *dpy, XvPortID port,
-		     char **name, char **busID, 
-		     int *major, int *minor, 
+		     char **name, char **busID,
+		     int *major, int *minor,
 		     int *patchLevel,
 		     int *isLocal);
 
@@ -34,7 +31,7 @@ Status XvMCCreateContext (
 
 Status XvMCDestroyContext (Display *display, XvMCContext * context);
 
-Status 
+Status
 XvMCCreateSurface(
   Display *display,
   XvMCContext * context,
@@ -55,9 +52,9 @@ XvMCPutSurface(
   Display *display,
   XvMCSurface *surface,
   Drawable draw,
-  short srcx, 
-  short srcy, 
-  unsigned short srcw, 
+  short srcx,
+  short srcy,
+  unsigned short srcw,
   unsigned short srch,
   short destx,
   short desty,
@@ -70,9 +67,9 @@ Status XvMCHideSurface(Display *display, XvMCSurface *surface);
 
 Status
 XvMCCreateSubpicture (
-   Display *display, 
+   Display *display,
    XvMCContext *context,
-   XvMCSubpicture *subpicture, 
+   XvMCSubpicture *subpicture,
    unsigned short width,
    unsigned short height,
    int xvimage_id
@@ -108,8 +105,8 @@ XvMCDestroySubpicture (Display *display, XvMCSubpicture *subpicture);
 
 Status
 XvMCSetSubpicturePalette (
-  Display *display, 
-  XvMCSubpicture *subpicture, 
+  Display *display,
+  XvMCSubpicture *subpicture,
   unsigned char *palette
 );
 
@@ -148,7 +145,7 @@ Status XvMCSyncSurface (Display *display, XvMCSurface *surface);
 Status XvMCFlushSurface (Display *display, XvMCSurface *surface);
 Status XvMCGetSurfaceStatus (Display *display, XvMCSurface *surface, int *stat);
 
-Status XvMCRenderSurface ( 
+Status XvMCRenderSurface (
    Display *display,
    XvMCContext *context,
    unsigned int picture_structure,
@@ -169,7 +166,7 @@ Status
 XvMCGetSubpictureStatus (Display *display, XvMCSubpicture *subpic, int *stat);
 
 Status XvMCCreateBlocks (
-   Display *display, 
+   Display *display,
    XvMCContext *context,
    unsigned int num_blocks,
    XvMCBlockArray *block
@@ -199,16 +196,16 @@ XvMCQueryAttributes (
 Status
 XvMCSetAttribute (
     Display *display,
-    XvMCContext *context, 
-    Atom attribute, 
+    XvMCContext *context,
+    Atom attribute,
     int value
 );
 
 Status
 XvMCGetAttribute (
     Display *display,
-    XvMCContext *context, 
-    Atom attribute, 
+    XvMCContext *context,
+    Atom attribute,
     int *value
 );
 

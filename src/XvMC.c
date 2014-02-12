@@ -1,13 +1,9 @@
-/* $XFree86: xc/lib/XvMC/XvMC.c,v 1.4 2001/11/14 21:54:38 mvojkovi Exp $ */
-
-#define NEED_REPLIES
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 #include <stdio.h>
 #include "XvMClibint.h"
-#ifdef HAS_SHM
+#ifdef HAVE_SHMAT
 #ifndef Lynx
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -15,17 +11,29 @@
 #include <ipc.h>
 #include <shm.h>
 #endif /* Lynx */
-#endif /* HAS_SHM */
+#endif /* HAVE_SHMAT */
 #include <unistd.h>
 #include <sys/time.h>
 #include <X11/extensions/Xext.h>
 #include <X11/extensions/extutil.h>
+#include <limits.h>
+
+#ifndef HAVE__XEATDATAWORDS
+static inline void _XEatDataWords(Display *dpy, unsigned long n)
+{
+# ifndef LONG64
+    if (n >= (ULONG_MAX >> 2))
+        _XIOError(dpy);
+# endif
+    _XEatData (dpy, n << 2);
+}
+#endif
 
 static XExtensionInfo _xvmc_info_data;
 static XExtensionInfo *xvmc_info = &_xvmc_info_data;
-static char *xvmc_extension_name = XvMCName;
+static const char *xvmc_extension_name = XvMCName;
 
-static char *xvmc_error_list[] =
+static const char *xvmc_error_list[] =
 {
    "BadContext",
    "BadSurface",
@@ -104,7 +112,7 @@ XvMCSurfaceInfo * XvMCListSurfaceTypes(Display *dpy, XvPortID port, int *num)
     *num = 0;
 
     XvMCCheckExtension (dpy, info, NULL);
-    
+
     LockDisplay (dpy);
     XvMCGetReq (ListSurfaceTypes, req);
     req->port = port;
@@ -115,8 +123,8 @@ XvMCSurfaceInfo * XvMCListSurfaceTypes(Display *dpy, XvPortID port, int *num)
     }
 
     if(rep.num > 0) {
-	surface_info = 
-	    (XvMCSurfaceInfo*)Xmalloc(rep.num * sizeof(XvMCSurfaceInfo));
+        if (rep.num < (INT_MAX / sizeof(XvMCSurfaceInfo)))
+            surface_info = Xmalloc(rep.num * sizeof(XvMCSurfaceInfo));
 
         if(surface_info) {
 	    xvmcSurfaceInfo sinfo;
@@ -130,15 +138,15 @@ XvMCSurfaceInfo * XvMCListSurfaceTypes(Display *dpy, XvPortID port, int *num)
 	       surface_info[i].chroma_format = sinfo.chroma_format;
 	       surface_info[i].max_width = sinfo.max_width;
 	       surface_info[i].max_height = sinfo.max_height;
-	       surface_info[i].subpicture_max_width = 
+	       surface_info[i].subpicture_max_width =
 					sinfo.subpicture_max_width;
-	       surface_info[i].subpicture_max_height = 
+	       surface_info[i].subpicture_max_height =
 					sinfo.subpicture_max_height;
 	       surface_info[i].mc_type = sinfo.mc_type;
 	       surface_info[i].flags = sinfo.flags;
 	    }
 	} else
-	   _XEatData(dpy, rep.length << 2);
+	   _XEatDataWords(dpy, rep.length);
     }
 
     UnlockDisplay (dpy);
@@ -176,8 +184,8 @@ XvImageFormatValues * XvMCListSubpictureTypes (
     }
 
     if(rep.num > 0) {
-        ret = 
-	   (XvImageFormatValues*)Xmalloc(rep.num * sizeof(XvImageFormatValues));
+        if (rep.num < (INT_MAX / sizeof(XvImageFormatValues)))
+            ret = Xmalloc(rep.num * sizeof(XvImageFormatValues));
 
         if(ret) {
             xvImageFormatInfo Info;
@@ -187,19 +195,19 @@ XvImageFormatValues * XvMCListSubpictureTypes (
 
             for(i = 0; i < rep.num; i++) {
               _XRead(dpy, (char*)(&Info), sz_xvImageFormatInfo);
-              ret[i].id = Info.id;            
-              ret[i].type = Info.type;        
-              ret[i].byte_order = Info.byte_order;            
+              ret[i].id = Info.id;
+              ret[i].type = Info.type;
+              ret[i].byte_order = Info.byte_order;
               memcpy(&(ret[i].guid[0]), &(Info.guid[0]), 16);
-              ret[i].bits_per_pixel = Info.bpp;       
-              ret[i].format = Info.format;            
-              ret[i].num_planes = Info.num_planes;            
-              ret[i].depth = Info.depth;              
-              ret[i].red_mask = Info.red_mask;        
-              ret[i].green_mask = Info.green_mask;            
-              ret[i].blue_mask = Info.blue_mask;              
-              ret[i].y_sample_bits = Info.y_sample_bits;              
-              ret[i].u_sample_bits = Info.u_sample_bits;              
+              ret[i].bits_per_pixel = Info.bpp;
+              ret[i].format = Info.format;
+              ret[i].num_planes = Info.num_planes;
+              ret[i].depth = Info.depth;
+              ret[i].red_mask = Info.red_mask;
+              ret[i].green_mask = Info.green_mask;
+              ret[i].blue_mask = Info.blue_mask;
+              ret[i].y_sample_bits = Info.y_sample_bits;
+              ret[i].u_sample_bits = Info.u_sample_bits;
               ret[i].v_sample_bits = Info.v_sample_bits;
               ret[i].horz_y_period = Info.horz_y_period;
               ret[i].horz_u_period = Info.horz_u_period;
@@ -211,23 +219,23 @@ XvImageFormatValues * XvMCListSubpictureTypes (
               ret[i].scanline_order = Info.scanline_order;
             }
         } else
-	   _XEatData(dpy, rep.length << 2);
+	   _XEatDataWords(dpy, rep.length);
     }
 
     UnlockDisplay (dpy);
     SyncHandle ();
-    return ret; 
+    return ret;
 }
 
 
-/****************************************************************** 
+/******************************************************************
    These are intended as a protocol interface to be used by direct
    rendering libraries.  They are not intended to be client viewable
    functions.  These will stay in place until we have a mechanism in
    place similar to that of OpenGL with an libXvMCcore library.
-*******************************************************************/ 
- 
-/* 
+*******************************************************************/
+
+/*
    _xvmc_create_context -
 
    Pass in the context with the surface_type_id, width, height,
@@ -238,7 +246,7 @@ XvImageFormatValues * XvMCListSubpictureTypes (
    an array of priv_count CARD32s.  This data is allocated by
    this function.  If returned, the caller is responsible for
    freeing it!  Generally, such information is only returned if
-   an XVMC_DIRECT context was specified. 
+   an XVMC_DIRECT context was specified.
 */
 
 
@@ -277,12 +285,13 @@ Status _xvmc_create_context (
     context->flags = rep.flags_return;
 
     if(rep.length) {
-	*priv_data = Xmalloc(rep.length << 2);
+	if (rep.length < (INT_MAX >> 2))
+	    *priv_data = Xmalloc(rep.length << 2);
 	if(*priv_data) {
             _XRead(dpy, (char*)(*priv_data), rep.length << 2);
 	    *priv_count = rep.length;
 	} else
-	    _XEatData(dpy, rep.length << 2);
+	    _XEatDataWords(dpy, rep.length);
     }
 
     UnlockDisplay (dpy);
@@ -313,14 +322,14 @@ Status _xvmc_destroy_context (
    _xvmc_create_surface -
 
    Pass the context and this function will fill out all the
-   information in the surface. 
+   information in the surface.
    The server may return implementation-specific information
    back in the priv_data.  The size of that information will
    an array of priv_count CARD32s.  This data is allocated by
    this function.  If returned, the caller is responsible for
    freeing it!  Generally, such information is returned only if
    the context was a direct context.
- 
+
 */
 
 Status _xvmc_create_surface (
@@ -358,12 +367,13 @@ Status _xvmc_create_surface (
     }
 
     if(rep.length) {
-        *priv_data = Xmalloc(rep.length << 2);
+        if (rep.length < (INT_MAX >> 2))
+            *priv_data = Xmalloc(rep.length << 2);
         if(*priv_data) {
             _XRead(dpy, (char*)(*priv_data), rep.length << 2);
             *priv_count = rep.length;
         } else
-            _XEatData(dpy, rep.length << 2);
+            _XEatDataWords(dpy, rep.length);
     }
 
     UnlockDisplay (dpy);
@@ -448,12 +458,13 @@ Status _xvmc_create_subpicture (
     subpicture->component_order[3] = rep.component_order[3];
 
     if(rep.length) {
-        *priv_data = Xmalloc(rep.length << 2);
+        if (rep.length < (INT_MAX >> 2))
+            *priv_data = Xmalloc(rep.length << 2);
         if(*priv_data) {
             _XRead(dpy, (char*)(*priv_data), rep.length << 2);
             *priv_count = rep.length;
         } else
-            _XEatData(dpy, rep.length << 2);
+            _XEatDataWords(dpy, rep.length);
     }
 
     UnlockDisplay (dpy);
@@ -473,31 +484,33 @@ Status _xvmc_destroy_subpicture(
 
     LockDisplay (dpy);
     XvMCGetReq (DestroySubpicture, req);
-    req->subpicture_id = subpicture->subpicture_id; 
+    req->subpicture_id = subpicture->subpicture_id;
     UnlockDisplay (dpy);
     SyncHandle ();
     return Success;
 }
 
 Status XvMCGetDRInfo(Display *dpy, XvPortID port,
-		     char **name, char **busID, 
-		     int *major, int *minor, 
+		     char **name, char **busID,
+		     int *major, int *minor,
 		     int *patchLevel,
 		     int *isLocal)
 {
     XExtDisplayInfo *info = xvmc_find_display(dpy);
     xvmcGetDRInfoReply rep;
     xvmcGetDRInfoReq  *req;
-    char *tmpBuf = NULL;
     CARD32 magic;
 
-#ifdef HAS_SHM
+#ifdef HAVE_SHMAT
     volatile CARD32 *shMem;
     struct timezone here;
     struct timeval now;
     here.tz_minuteswest = 0;
     here.tz_dsttime = 0;
 #endif
+
+    *name = NULL;
+    *busID = NULL;
 
     XvMCCheckExtension (dpy, info, BadImplementation);
 
@@ -507,7 +520,7 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
     req->port = port;
     magic = 0;
     req->magic = 0;
-#ifdef HAS_SHM 
+#ifdef HAVE_SHMAT
     req->shmKey = shmget(IPC_PRIVATE, 1024, IPC_CREAT | 0600);
 
     /*
@@ -518,11 +531,11 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
      * any complicated data on those pages. Thats the explanation of this
      * otherwise stupid-looking pattern algorithm.
      */
-   
+
     if (req->shmKey >= 0) {
 	shMem = (CARD32 *) shmat(req->shmKey, NULL, 0);
 	shmctl( req->shmKey, IPC_RMID, NULL);
-	if ( shMem ) { 
+	if ( shMem ) {
 
 	    register volatile CARD32 *shMemC = shMem;
 	    register int i;
@@ -532,7 +545,7 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
 	    req->magic = magic;
 	    i = 1024 / sizeof(CARD32);
 	    while(i--) {
-	        *shMemC++ = magic; 
+	        *shMemC++ = magic;
 	        magic = ~magic;
 	    }
 	} else {
@@ -545,45 +558,45 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
     if (!_XReply (dpy, (xReply *) &rep, 0, xFalse)) {
         UnlockDisplay (dpy);
         SyncHandle ();
-#ifdef HAS_SHM
+#ifdef HAVE_SHMAT
 	if ( req->shmKey >= 0) {
 	    shmdt( (const void *) shMem );
-	}            
+	}
 #endif
         return -1;
     }
-#ifdef HAS_SHM
+#ifdef HAVE_SHMAT
     shmdt( (const void *) shMem );
 #endif
 
     if (rep.length > 0) {
+	unsigned long realSize = 0;
+	char *tmpBuf = NULL;
 
-        int realSize = rep.length << 2;
-
-	tmpBuf = (char *) Xmalloc(realSize);
-	if (tmpBuf) {
-	    *name = (char *) Xmalloc(rep.nameLen);
-	    if (*name) {
-		*busID = (char *) Xmalloc(rep.busIDLen);
-		if (! *busID) {
-		    XFree(*name);
-		    XFree(tmpBuf);
-		}
-	    } else {
-		XFree(tmpBuf);
-	    }	    
+	if (rep.length < (INT_MAX >> 2)) {
+	    realSize = rep.length << 2;
+	    if (realSize >= (rep.nameLen + rep.busIDLen)) {
+		tmpBuf = Xmalloc(realSize);
+		*name = Xmalloc(rep.nameLen);
+		*busID = Xmalloc(rep.busIDLen);
+	    }
 	}
 
 	if (*name && *busID && tmpBuf) {
-
 	    _XRead(dpy, tmpBuf, realSize);
 	    strncpy(*name,tmpBuf,rep.nameLen);
+	    (*name)[rep.nameLen - 1] = '\0';
 	    strncpy(*busID,tmpBuf+rep.nameLen,rep.busIDLen);
+	    (*busID)[rep.busIDLen - 1] = '\0';
+	    XFree(tmpBuf);
+	} else {
+	    XFree(*name);
+	    *name = NULL;
+	    XFree(*busID);
+	    *busID = NULL;
 	    XFree(tmpBuf);
 
-	} else {
-
-	    _XEatData(dpy, realSize);
+	    _XEatDataWords(dpy, rep.length);
 	    UnlockDisplay (dpy);
 	    SyncHandle ();
 	    return -1;

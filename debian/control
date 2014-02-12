@@ -2,14 +2,14 @@ Source: libxvmc
 Section: x11
 Priority: optional
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
-Uploaders: David Nusinow <dnusinow@debian.org>, Andres Salomon <dilinger@debian.org>, Drew Parsons <dparsons@debian.org>
+Uploaders: Drew Parsons <dparsons@debian.org>, Cyril Brulebois <kibi@debian.org>
 Build-Depends:
  debhelper (>= 5.0.0),
  libx11-dev (>= 1:0.99.2),
  libxext-dev (>= 1:0.99.1),
  x11proto-video-dev,
  libxv-dev (>= 1:0.99.1),
- xutils-dev (>= 1:7.5~1),
+ xutils-dev (>= 1:7.5+4),
  pkg-config,
  quilt,
  automake,
@@ -33,8 +33,6 @@ Description: X11 Video extension library
  .
  More information about X.Org can be found at:
  <URL:http://www.X.org>
- <URL:http://xorg.freedesktop.org>
- <URL:http://lists.freedesktop.org/mailman/listinfo/xorg>
  .
  This module can be found at
  git://anongit.freedesktop.org/git/xorg/lib/libXvMC
@@ -58,8 +56,6 @@ Description: X11 Video extension library (debug package)
  .
  More information about X.Org can be found at:
  <URL:http://www.X.org>
- <URL:http://xorg.freedesktop.org>
- <URL:http://lists.freedesktop.org/mailman/listinfo/xorg>
  .
  This module can be found at
  git://anongit.freedesktop.org/git/xorg/lib/libXvMC
@@ -84,8 +80,6 @@ Description: X11 Video extension library (development headers)
  .
  More information about X.Org can be found at:
  <URL:http://www.X.org>
- <URL:http://xorg.freedesktop.org>
- <URL:http://lists.freedesktop.org/mailman/listinfo/xorg>
  .
  This module can be found at
  git://anongit.freedesktop.org/git/xorg/lib/libXvMC
