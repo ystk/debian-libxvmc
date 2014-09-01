@@ -21,14 +21,13 @@
 
 # Initialize Autoconf
 AC_PREREQ([2.60])
-AC_INIT([libXvMC], [1.0.7],
+AC_INIT([libXvMC], [1.0.8],
 	[https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], [libXvMC])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS([config.h])
 
 # Initialize Automake
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
-AM_MAINTAINER_MODE
 
 # Initialize libtool
 AC_PROG_LIBTOOL
@@ -51,6 +50,12 @@ LIBS="$SAVE_LIBS"
 
 # Checks for library functions.
 AC_CHECK_FUNCS([shmat])
+
+# Check to see if dlopen is in default libraries (like Solaris, which
+# has it in libc), or if libdl is needed to get it.
+AC_CHECK_FUNC([dlopen], [],
+	AC_CHECK_LIB([dl], [dlopen], DLOPEN_LIBS="-ldl"))
+AC_SUBST(DLOPEN_LIBS)
 
 # Allow checking code with lint, sparse, etc.
 XORG_WITH_LINT

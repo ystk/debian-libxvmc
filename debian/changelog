@@ -1,15 +1,30 @@
-libxvmc (2:1.0.7-1+deb7u2) wheezy-security; urgency=high
+libxvmc (2:1.0.8-2) unstable; urgency=low
 
-  * Fix regression in CVE-2013-1999 fix.  Thanks to Dave Airlie and Al Viro.
+  * Link libXvMCW.so against -ldl (closes: #610592)
+  * Remove Cyril from Uploaders.
 
- -- Julien Cristau <jcristau@debian.org>  Fri, 24 May 2013 07:50:50 +0200
+ -- Julien Cristau <jcristau@debian.org>  Sat, 12 Jul 2014 17:58:58 +0200
 
-libxvmc (2:1.0.7-1+deb7u1) wheezy-security; urgency=high
+libxvmc (2:1.0.8-1) unstable; urgency=low
 
-  * integer overflows calculating memory needs for replies [CVE-2013-1990]
-  * Multiple unvalidated assumptions in XvMCGetDRInfo() [CVE-2013-1999]
+  * New upstream release
+    - fixes CVE-2013-1990 and CVE-2013-1999
+  * Bump debhelper compat level to 7.
+  * Use dpkg-buildflags.
+  * Disable silent build rules.
+  * Replace dh_clean -k with dh_prep.
 
- -- Julien Cristau <jcristau@debian.org>  Tue, 14 May 2013 21:51:11 +0200
+ -- Julien Cristau <jcristau@debian.org>  Mon, 12 Aug 2013 22:22:00 +0200
+
+libxvmc (2:1.0.7-2) unstable; urgency=low
+
+  * Team upload.
+
+  * Switch to Multi-Arch. Thanks Andreas Beckmann for the patch.
+    Closes: #640499.
+  * Bump Standards-Version to 3.9.4. No changes needed.
+
+ -- Emilio Pozuelo Monfort <pochu@debian.org>  Sun, 09 Jun 2013 02:32:16 +0200
 
 libxvmc (2:1.0.7-1) unstable; urgency=low
 

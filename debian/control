@@ -2,9 +2,11 @@ Source: libxvmc
 Section: x11
 Priority: optional
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
-Uploaders: Drew Parsons <dparsons@debian.org>, Cyril Brulebois <kibi@debian.org>
+Uploaders:
+ Drew Parsons <dparsons@debian.org>,
 Build-Depends:
- debhelper (>= 5.0.0),
+ dpkg-dev (>= 1.16.1),
+ debhelper (>= 8.1.3),
  libx11-dev (>= 1:0.99.2),
  libxext-dev (>= 1:0.99.1),
  x11proto-video-dev,
@@ -14,13 +16,15 @@ Build-Depends:
  quilt,
  automake,
  libtool
-Standards-Version: 3.8.3
+Standards-Version: 3.9.4
 Vcs-Git: git://git.debian.org/git/pkg-xorg/lib/libxvmc
 Vcs-Browser: http://git.debian.org/?p=pkg-xorg/lib/libxvmc.git
 
 Package: libxvmc1
 Section: libs
 Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}, x11-common
 Description: X11 Video extension library
  libXvMC provides an X Window System client interface to the
@@ -63,6 +67,7 @@ Description: X11 Video extension library (debug package)
 Package: libxvmc-dev
 Section: libdevel
 Architecture: any
+Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}, libxvmc1 (= ${binary:Version}), libx11-dev (>= 2:1.0.0-1), libxext-dev (>= 1:1.0.0-2), x11proto-video-dev, libxv-dev
 Conflicts: x11proto-video-dev (<< 2.2+cvs.20050712-1)
 Replaces: x11proto-video-dev (<< 2.2+cvs.20050712-1)

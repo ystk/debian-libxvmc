@@ -10,14 +10,10 @@
 # set this to the name of the main shlib's binary package
 PACKAGE = libxvmc1
 
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+
 include debian/xsfbs/xsfbs.mk
 
-CFLAGS = -Wall -g
-ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
-	CFLAGS += -O0
-else
-	CFLAGS += -O2
-endif
 ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 	NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 	MAKEFLAGS += -j$(NUMJOBS)
@@ -40,9 +36,11 @@ build-stamp:
 	mkdir -p build
 	cd build && \
 	../configure --prefix=/usr \
+	             --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 	             --sysconfdir=/etc --mandir=\$${prefix}/share/man \
 	             --infodir=\$${prefix}/share/info $(confflags) \
-	             CFLAGS="$(CFLAGS)" 
+		     --disable-silent-rules \
+		     $(shell DEB_CFLAGS_MAINT_APPEND=-Wall dpkg-buildflags --export=configure)
 	cd build && $(MAKE)
 	>$@
 
@@ -62,7 +60,7 @@ clean: xsfclean
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k
+	dh_prep
 	dh_installdirs
 
 	cd build && $(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
@@ -75,8 +73,8 @@ binary-arch: build install
 	dh_testroot
 
 	dh_installdocs
-	dh_install --sourcedir=debian/tmp --fail-missing --exclude=.la
-	dh_installchangelogs ChangeLog
+	dh_install --fail-missing --exclude=.la
+	dh_installchangelogs
 	dh_link
 	dh_strip --dbg-package=$(PACKAGE)-dbg
 	dh_compress
