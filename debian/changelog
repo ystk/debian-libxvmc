@@ -1,3 +1,9 @@
+libxvmc (2:1.0.8-2+deb8u1) jessie; urgency=medium
+
+  * Avoid buffer underflow on empty strings (CVE-2016-7953)
+
+ -- Julien Cristau <jcristau@debian.org>  Sat, 07 Jan 2017 16:34:22 +0100
+
 libxvmc (2:1.0.8-2) unstable; urgency=low
 
   * Link libXvMCW.so against -ldl (closes: #610592)
